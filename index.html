@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Бэклог АУФ Match</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap">
+<style>
+  /* Одна колонка-документ на белой поверхности, как в самом продукте:
+     группы разделяют отступы, строки — тонкие линии, оранжевый — только срочное */
+  :root {
+    --bg: #ffffff;
+    --fg: #17171a;
+    --muted: #6b6b73;
+    --line: #e7e7ea;
+    --soft: #f4f4f5;
+    --accent: #e8611c;
+    --accent-soft: #fdeee5;
+    --attention: #9a5b00;
+    --attention-soft: #fdf3e2;
+    --mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    --text: "Geist", system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #141416; --fg: #ececef; --muted: #9a9aa3; --line: #2a2a2e; --soft: #1d1d20;
+      --accent: #ff8a4c; --accent-soft: #3a2216; --attention: #f0b44c; --attention-soft: #33270f;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #141416; --fg: #ececef; --muted: #9a9aa3; --line: #2a2a2e; --soft: #1d1d20;
+    --accent: #ff8a4c; --accent-soft: #3a2216; --attention: #f0b44c; --attention-soft: #33270f;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body { background: var(--bg); color: var(--fg); font: 15px/1.55 var(--text); }
+  .page {
+    max-width: 780px; margin: 0 auto;
+    padding-block: 40px 64px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    display: flex; flex-direction: column; gap: 40px;
+  }
+  .masthead { display: flex; flex-direction: column; gap: 12px; }
+  .eyebrow { font: 500 12px var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+  h1 { margin: 0; font: 600 32px/1.15 var(--mono); letter-spacing: -.02em; text-wrap: balance; }
+  .lede { margin: 0; max-width: 62ch; color: var(--muted); }
+  .lede strong { color: var(--fg); font-weight: 500; }
+
+  .stages { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+  .stage a { display: flex; flex-direction: column; gap: 2px; padding: 14px 12px 14px 0; color: inherit; text-decoration: none; border-radius: 6px; }
+  .stage a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .stage + .stage a { padding-left: 12px; border-left: 1px solid var(--line); border-radius: 0; }
+  .count { font: 600 26px/1.1 var(--mono); font-variant-numeric: tabular-nums; }
+  .label { font: 500 12px var(--mono); color: var(--muted); }
+  .stage.empty .count { color: var(--line); }
+  .stage.attention .count, .stage.attention .label { color: var(--attention); }
+
+  section { display: flex; flex-direction: column; gap: 4px; scroll-margin-top: 16px; }
+  .section-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; padding-bottom: 8px; border-bottom: 1px solid var(--fg); }
+  h2 { margin: 0; font: 600 15px var(--mono); display: flex; gap: 8px; align-items: baseline; }
+  h2 .n { color: var(--muted); font-weight: 400; font-variant-numeric: tabular-nums; }
+  .section-head p { margin: 0; font-size: 13px; color: var(--muted); }
+
+  .tasks { list-style: none; margin: 0; padding: 0; }
+  .task { display: grid; grid-template-columns: 44px minmax(0, 1fr); padding: 18px 0; border-bottom: 1px solid var(--line); }
+  .task-head { display: contents; }
+  .no { grid-column: 1; font: 500 13px/1.6 var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; padding-top: 1px; }
+  h3 { grid-column: 2; margin: 0; font: 500 16px/1.4 var(--text); text-wrap: balance; }
+  .task-body { grid-column: 2; display: flex; flex-direction: column; gap: 10px; margin-top: 8px; min-width: 0; }
+  .task.low h3 { color: var(--muted); }
+  .chips { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+  .chip { font: 500 11.5px/1 var(--mono); padding: 5px 8px; border-radius: 999px; background: var(--attention-soft); color: var(--attention); }
+  .chip.hot { background: var(--accent-soft); color: var(--accent); }
+  .chip.quiet { background: var(--soft); color: var(--muted); }
+  .dates { font: 12px var(--mono); color: var(--muted); margin-left: 4px; }
+  .why { color: var(--fg); max-width: 64ch; }
+  .why p { margin: 0; }
+  .why p + p { margin-top: 8px; }
+  .waits { margin: 0; display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 13.5px; color: var(--muted); }
+  .waits span { font: 500 11.5px/1.9 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--attention); }
+  footer { font: 12px/1.6 var(--mono); color: var(--muted); border-top: 1px solid var(--line); padding-top: 16px; }
+
+  @media (max-width: 620px) {
+    .page { padding-block: 24px 48px; gap: 32px; }
+    h1 { font-size: 26px; }
+    .stages { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .stage:nth-child(4) a { padding-left: 0; border-left: 0; }
+    .stage:nth-child(n+4) { border-top: 1px solid var(--line); }
+    .task { grid-template-columns: 36px minmax(0, 1fr); }
+  }
+  @media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="masthead">
+    <div class="eyebrow">Снимок на 20 октября 2026, 11:47</div>
+    <h1>Бэклог АУФ Match</h1>
+    <p class="lede">Задачи по продукту и где каждая сейчас. Их делает <strong>агент Claude</strong>: ночью с 01:00 и днём раз в два часа, каждую — в отдельной ветке кода, с тестами и ревью. Слава проверяет результат и принимает или возвращает на доработку. Коллегам уходит только принятое.</p>
+  </div>
+
+  <ol class="stages"><li class="stage"><a href="#draft"><span class="count">4</span><span class="label">Черновики</span></a></li><li class="stage"><a href="#queue"><span class="count">3</span><span class="label">Очередь</span></a></li><li class="stage empty"><a href="#run"><span class="count">0</span><span class="label">В работе</span></a></li><li class="stage attention"><a href="#wait"><span class="count">3</span><span class="label">Ждёт Славу</span></a></li><li class="stage"><a href="#ok"><span class="count">1</span><span class="label">Принято</span></a></li><li class="stage empty"><a href="#prod"><span class="count">0</span><span class="label">На проде</span></a></li></ol>
+
+<section id="draft">
+  <header class="section-head"><h2>Черновики<span class="n">4</span></h2><p>Ещё не в работе: ждут решения или данных</p></header>
+  <ol class="tasks"><li class="task">
+  <div class="task-head"><span class="no">002</span><h3>Матчинг вакансии: убрать оценки по критериям, телеграм и «Смягчить требования»</h3></div>
+  <div class="task-body">
+    <div class="chips"><span class="chip hot">срочно</span><span class="chip quiet">интерфейс</span><span class="dates">заведена 20 октября</span></div>
+    <div class="why"><p>Решение с созвона Славы и Дианы по продукту: рекрутеру на странице вакансии нужно понять, почему человек подходит. Оценки по критериям и контакты перегружают список, контакты есть в карточке кандидата. «Смягчить требования» делали для маленькой базы: кнопка молча переписывает критерии вакансии (обязательное → желательное, удаляет стоп-факторы) и не оставляет истории. Срок, названный на созвоне, — конец следующей недели.</p></div>
+    <p class="waits"><span>Ждёт</span>Сначала довести «подбор по данным» · Ответ на вопрос</p>
+  </div>
+</li><li class="task">
+  <div class="task-head"><span class="no">008</span><h3>«Взять на вакансию» из карточки — сразу на несколько</h3></div>
+  <div class="task-body">
+    <div class="chips"><span class="chip quiet">интерфейс</span><span class="dates">заведена 20 октября</span></div>
+    <div class="why"><p>Созвон Славы и Дианы: при переносе человека из базы рекрутер сразу назначает ему несколько вакансий. Пара к карточке 003 (то же при загрузке).</p></div>
+    <p class="waits"><span>Ждёт</span>Решить, нужно ли · Уточнить «источник при переносе из базы» · Сначала довести «подбор по данным»</p>
+  </div>
+</li><li class="task">
+  <div class="task-head"><span class="no">009</span><h3>Аналитика: одобрения и отказы за период</h3></div>
+  <div class="task-body">
+    <div class="chips"><span class="chip quiet">данные</span><span class="dates">заведена 20 октября</span></div>
+    <div class="why"><p>Созвон Славы и Дианы: сложные метрики уходят со «Сводки» в отдельную вкладку, чтобы не мешать работе с этапами. Пока не договорились, что считать «одобрением», есть риск неточных данных.</p></div>
+    <p class="waits"><span>Ждёт</span>Требования Дианы</p>
+  </div>
+</li><li class="task low">
+  <div class="task-head"><span class="no">010</span><h3>Безопасность: технические правки</h3></div>
+  <div class="task-body">
+    <div class="chips"><span class="chip quiet">техника</span><span class="dates">заведена 20 октября</span></div>
+    <div class="why"><p>Со старой доски («безопасность данных»). Мелкие технические правки по итогам разбора кода 20.10.</p></div>
+    
+  </div>
+</li></ol>
+</section>
+<section id="queue">
+  <header class="section-head"><h2>Очередь<span class="n">3</span></h2><p>Агент возьмёт в ближайший запуск</p></header>
+  <ol class="tasks"><li class="task">
+  <div class="task-head"><span class="no">003</span><h3>Загрузка кандидатов: несколько вакансий сразу и без двойников</h3></div>
+  <div class="task-body">
+    <div class="chips"><span class="chip hot">срочно</span><span class="chip quiet">интерфейс</span><span class="dates">заведена 20 октября</span></div>
+    <div class="why"><p>Решение с созвона Славы и Дианы: рекрутер заводит человека сразу на несколько вакансий. Сейчас ради второй вакансии его загружают ещё раз, и в базе появляется двойник — проверка по почте его не ловит (почты в портфолио часто нет). Срок, названный на созвоне, — конец следующей недели.</p></div>
+    
+  </div>
+</li><li class="task">
+  <div class="task-head"><span class="no">006</span><h3>Создание вакансии без шага «Скоринг»</h3></div>
+  <div class="task-body">
+    <div class="chips"><span class="chip quiet">интерфейс</span><span class="dates">заведена 20 октября</span></div>
+    <div class="why"><p>Созвон Славы и Дианы: критерии нужны один раз, при создании или смене подхода к подбору, и перегружают рекрутеру создание вакансии.</p></div>
+    
+  </div>
+</li><li class="task low">
+  <div class="task-head"><span class="no">011</span><h3>.env.example: убрать порт старого сервера</h3></div>
+  <div class="task-body">
+    <div class="chips"><span class="chip quiet">техника</span><span class="dates">заведена 20 октября</span></div>
+    <div class="why"><p>Кто скопирует пример в .env, получит приложение на 3001, а прокси из DEPLOY.md смотрит на 3000. Замечание ревьюера к карточке 001.</p></div>
+    
+  </div>
+</li></ol>
+</section>
+
+<section id="wait">
+  <header class="section-head"><h2>Ждёт Славу<span class="n">3</span></h2><p>Проверить результат или ответить на вопросы</p></header>
+  <ol class="tasks"><li class="task">
+  <div class="task-head"><span class="no">004</span><h3>Сводка этапов: фильтр по периоду</h3></div>
+  <div class="task-body">
+    <div class="chips"><span class="chip">вопросы</span><span class="chip quiet">интерфейс</span><span class="dates">заведена 20 октября</span></div>
+    <div class="why"><p>Созвон Славы и Дианы: нужна картина за период, как в отчётах Хантфлоу. Сейчас «Сводка» — снимок «кто на каком этапе сейчас», фильтр один: «Открытые / все вакансии». Сложные метрики уходят в отдельную вкладку «Аналитика» (карточка 009), саму «Сводку» не удаляем.</p></div>
+    <p class="waits"><span>Ждёт</span>3 вопроса к Славе до старта</p>
+  </div>
+</li><li class="task">
+  <div class="task-head"><span class="no">005</span><h3>Отмена перевода между этапами</h3></div>
+  <div class="task-body">
+    <div class="chips"><span class="chip">вопросы</span><span class="chip quiet">интерфейс</span><span class="dates">заведена 20 октября</span></div>
+    <div class="why"><p>Созвон Славы и Дианы: перевод между этапами должен быть обратимым, а лишние действия не должны висеть в истории. Сейчас отменить перевод нельзя нигде, кроме отсмотра подборки (там отмена добавляет обратный перевод). Ошибочные переводы испортят «Сводку» за период и аналитику — они считаются по истории переводов (карточки 004, 009).</p></div>
+    <p class="waits"><span>Ждёт</span>3 вопроса к Славе до старта</p>
+  </div>
+</li><li class="task">
+  <div class="task-head"><span class="no">007</span><h3>Описание вакансии в подборке для клиента</h3></div>
+  <div class="task-body">
+    <div class="chips"><span class="chip">вопросы</span><span class="chip quiet">интерфейс</span><span class="dates">заведена 20 октября</span></div>
+    <div class="why"><p>Созвон Славы и Дианы: при публикации подборки описание вакансии должно попадать к клиенту и обновляться из брифа.</p></div>
+    <p class="waits"><span>Ждёт</span>2 вопроса к Славе до старта</p>
+  </div>
+</li></ol>
+</section>
+<section id="ok">
+  <header class="section-head"><h2>Принято<span class="n">1</span></h2><p>Готово, выйдет со следующей выкаткой</p></header>
+  <ol class="tasks"><li class="task">
+  <div class="task-head"><span class="no">001</span><h3>Убрать мёртвый express-бэкенд</h3></div>
+  <div class="task-body">
+    <div class="chips"><span class="chip quiet">техника</span><span class="dates">заведена 19 октября · обновлена 20 октября</span></div>
+    <div class="why"><p>По CLAUDE.md это остатки первой архитектуры, их никто не вызывает. Они путают: выглядят как второй бэкенд, и их приходится обходить при поиске.</p></div>
+    
+  </div>
+</li></ol>
+</section>
+
+
+
+  <footer>Собрано из карточек бэклога 20 октября 2026, 11:47. Задачи и решения по ним ведёт Слава.</footer>
+</div>
+</body>
+</html>
