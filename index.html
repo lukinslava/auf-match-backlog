@@ -2,208 +2,449 @@
 <html lang="ru">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
-<title>Бэклог АУФ Match</title>
-<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Бэклог · АУФ Match</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-  /* Одна колонка-документ на белой поверхности, как в самом продукте:
-     группы разделяют отступы, строки — тонкие линии, оранжевый — только срочное */
   :root {
     --bg: #ffffff;
+    --desk: #f4f4f5;
     --fg: #17171a;
     --muted: #6b6b73;
     --line: #e7e7ea;
-    --soft: #f4f4f5;
-    --accent: #e8611c;
-    --accent-soft: #fdeee5;
-    --attention: #9a5b00;
-    --attention-soft: #fdf3e2;
-    --mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
-    --text: "Geist", system-ui, -apple-system, "Segoe UI", sans-serif;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
-      --bg: #141416; --fg: #ececef; --muted: #9a9aa3; --line: #2a2a2e; --soft: #1d1d20;
-      --accent: #ff8a4c; --accent-soft: #3a2216; --attention: #f0b44c; --attention-soft: #33270f;
-      color-scheme: dark;
-    }
-  }
-  :root[data-theme="dark"] {
-    --bg: #141416; --fg: #ececef; --muted: #9a9aa3; --line: #2a2a2e; --soft: #1d1d20;
-    --accent: #ff8a4c; --accent-soft: #3a2216; --attention: #f0b44c; --attention-soft: #33270f;
-    color-scheme: dark;
+    --soft: #f6f6f7;
+    --accent: #F97029;
+    --accent-soft: rgba(249, 112, 41, .08);
+    --green: #1f7a4d;
+    --green-soft: #e8f5ee;
+    --amber: #9a5b00;
+    --amber-soft: #fdf3e2;
+    --red: #b42318;
+    --mono: "Geist Mono", ui-monospace, monospace;
+    --text: "Geist", system-ui, sans-serif;
   }
   * { box-sizing: border-box; }
-  body { background: var(--bg); color: var(--fg); font: 15px/1.55 var(--text); }
-  .page {
-    max-width: 780px; margin: 0 auto;
-    padding-block: 40px 64px;
-    padding-left: max(16px, env(safe-area-inset-left, 0px));
-    padding-right: max(16px, env(safe-area-inset-right, 0px));
-    display: flex; flex-direction: column; gap: 40px;
+  [hidden] { display: none !important; }
+  html, body { margin: 0; height: 100%; background: var(--desk); color: var(--fg); font: 14px/1.5 var(--text); }
+  button, input, textarea, select { font: inherit; color: inherit; }
+  .num { font-variant-numeric: tabular-nums; }
+
+  header { display: flex; align-items: center; gap: 16px; height: 60px; padding: 0 24px; background: var(--bg); border-bottom: 1px solid var(--line); }
+  header h1 { margin: 0; font: 600 15px var(--mono); letter-spacing: -.01em; white-space: nowrap; }
+  header h1 span { color: var(--muted); font-weight: 400; }
+  .agent { display: inline-flex; align-items: center; gap: 8px; font: 12.5px var(--mono); color: var(--muted); }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: #c7c7cc; flex: none; }
+  .agent.busy { color: var(--fg); }
+  .agent.busy .dot, .dot.live { background: var(--accent); animation: pulse 1.4s ease-in-out infinite; }
+  @keyframes pulse { 50% { opacity: .35; } }
+  header .spacer { flex: 1; }
+
+  .btn { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 14px; border-radius: 8px; border: 1px solid #d9d9de; background: #fff; font: 500 13px var(--mono); cursor: pointer; white-space: nowrap; }
+  .btn:hover { border-color: #b9b9c0; }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn.primary:hover { filter: brightness(.96); }
+  .btn.quiet { border-color: transparent; background: none; color: var(--muted); padding: 0 8px; }
+  .btn.quiet:hover { color: var(--fg); }
+  .btn:disabled { opacity: .5; cursor: default; }
+  .link { background: none; border: 0; padding: 0; font: 12.5px var(--mono); color: var(--muted); cursor: pointer; white-space: nowrap; }
+  .link:hover { color: var(--fg); }
+
+  /* ── канбан ── */
+  .board { display: flex; gap: 24px; height: calc(100% - 60px); padding: 16px 24px 24px; overflow-x: auto; }
+  .col { position: relative; flex: 1 1 0; min-width: 168px; max-width: 320px; display: flex; flex-direction: column; min-height: 0; }
+  /* Стрелка в промежутке — путь задачи слева направо */
+  .col.flow::after { content: "→"; position: absolute; top: 4px; right: -18px; color: #b9b9c0; font: 13px var(--mono); }
+  .col-head { padding: 4px 4px 10px; }
+  .col-title { display: flex; align-items: baseline; gap: 8px; font: 600 13px var(--mono); }
+  .col-title .num { color: var(--muted); font-weight: 400; }
+  .turn { margin-top: 2px; font: 500 11.5px var(--mono); color: var(--muted); }
+  .col-hint { margin-top: 2px; font-size: 12.5px; color: var(--muted); line-height: 1.35; }
+  .col.yours .col-title, .col.yours .turn { color: var(--accent); }
+  .col-body { flex: 1; min-height: 120px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding: 2px; border-radius: 12px; }
+  .col.yours .col-body { background: var(--accent-soft); padding: 8px; }
+
+  .card { display: block; width: 100%; text-align: left; padding: 12px 12px 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); cursor: pointer; }
+  .card:hover { border-color: #cfcfd5; }
+  .card.sel { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+  .card .top { display: flex; gap: 8px; align-items: center; font: 12px var(--mono); color: var(--muted); }
+  .card .t { margin-top: 4px; font-weight: 500; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .card .m { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font: 11.5px var(--mono); color: var(--muted); }
+  .empty { padding: 14px 12px; border: 1px dashed #d9d9de; border-radius: 10px; color: var(--muted); font-size: 12.5px; text-align: center; }
+
+  .chip { font: 500 11.5px var(--mono); padding: 2px 8px; border-radius: 999px; background: var(--soft); color: var(--muted); white-space: nowrap; }
+  .chip.wait { background: var(--accent-soft); color: var(--accent); }
+  .chip.ok { background: var(--green-soft); color: var(--green); }
+  .chip.q { background: var(--amber-soft); color: var(--amber); }
+  .chip.run { background: var(--fg); color: #fff; }
+
+  /* ── шторка ── */
+  .veil { position: fixed; inset: 0; background: rgba(23, 23, 26, .18); }
+  .drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(640px, 100%); background: var(--bg); border-left: 1px solid var(--line); box-shadow: -12px 0 40px rgba(0, 0, 0, .08); overflow-y: auto; padding: 22px 36px 56px; }
+  .drawer .close { position: sticky; top: 0; float: right; margin: -6px -16px 0 0; }
+  .eyebrow { font: 12px var(--mono); color: var(--muted); }
+  h2.title { margin: 6px 0 10px; font: 600 22px/1.25 var(--mono); letter-spacing: -.02em; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .meta { font: 12px var(--mono); color: var(--muted); }
+  .where { margin-top: 14px; font-size: 13px; color: var(--muted); }
+
+  .actions { margin: 18px 0 6px; padding: 16px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+  .actions .bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .actions .hint { color: var(--muted); font-size: 13px; }
+  .actions .spacer { flex: 1; }
+  .actions textarea { display: block; width: 100%; min-height: 84px; margin: 0 0 10px; padding: 10px 12px; border: 1px solid #d9d9de; border-radius: 8px; resize: vertical; }
+  .actions textarea:focus, .form input:focus, .form textarea:focus, .form select:focus { outline: none; border-color: var(--accent); }
+  .err { color: var(--red); font-size: 13px; margin-top: 8px; }
+  .err:empty { display: none; }
+
+  .shots { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; margin: 20px 0 4px; }
+  .shots a { display: block; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .shots img { display: block; width: 100%; }
+  .shots span { display: block; padding: 6px 8px; font: 11.5px var(--mono); color: var(--muted); border-top: 1px solid var(--line); }
+
+  .md { margin-top: 16px; }
+  .md h1 { display: none; }
+  .md h2 { margin: 26px 0 8px; font: 600 12.5px var(--mono); text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+  .md h3 { margin: 18px 0 6px; font: 600 14px var(--mono); }
+  .md p { margin: 0 0 10px; }
+  .md ul, .md ol { margin: 0 0 10px; padding-left: 20px; }
+  .md li { margin: 3px 0; }
+  .md code { font: 12.5px var(--mono); background: var(--soft); padding: 1px 5px; border-radius: 4px; }
+  .md pre { background: var(--soft); padding: 12px 14px; border-radius: 8px; overflow: auto; }
+  .md pre code { background: none; padding: 0; }
+  .md a { color: inherit; }
+
+  .form { display: grid; gap: 14px; margin-top: 18px; }
+  .form label { display: grid; gap: 6px; font: 500 12px var(--mono); color: var(--muted); }
+  .form input, .form textarea, .form select { padding: 9px 12px; border: 1px solid #d9d9de; border-radius: 8px; background: #fff; font: 14px var(--text); color: var(--fg); }
+  .form textarea { min-height: 90px; resize: vertical; }
+  .form .two { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .form .check { display: flex; gap: 8px; align-items: center; font: 13px var(--text); color: var(--fg); }
+  .form small { font: 12px var(--text); color: var(--muted); }
+
+  @media (max-width: 760px) {
+    header { padding: 0 16px; gap: 10px; }
+    header h1 span, .agent-text-long { display: none; }
+    .board { padding: 12px 16px 16px; }
+    .drawer { padding: 18px 16px 48px; }
+    .form .two { grid-template-columns: 1fr; }
   }
-  .masthead { display: flex; flex-direction: column; gap: 12px; }
-  .eyebrow { font: 500 12px var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
-  h1 { margin: 0; font: 600 32px/1.15 var(--mono); letter-spacing: -.02em; text-wrap: balance; }
-  .lede { margin: 0; max-width: 62ch; color: var(--muted); }
-  .lede strong { color: var(--fg); font-weight: 500; }
-
-  .stages { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
-  .stage a { display: flex; flex-direction: column; gap: 2px; padding: 14px 12px 14px 0; color: inherit; text-decoration: none; border-radius: 6px; }
-  .stage a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-  .stage + .stage a { padding-left: 12px; border-left: 1px solid var(--line); border-radius: 0; }
-  .count { font: 600 26px/1.1 var(--mono); font-variant-numeric: tabular-nums; }
-  .label { font: 500 12px var(--mono); color: var(--muted); }
-  .stage.empty .count { color: var(--line); }
-  .stage.attention .count, .stage.attention .label { color: var(--attention); }
-
-  section { display: flex; flex-direction: column; gap: 4px; scroll-margin-top: 16px; }
-  .section-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; padding-bottom: 8px; border-bottom: 1px solid var(--fg); }
-  h2 { margin: 0; font: 600 15px var(--mono); display: flex; gap: 8px; align-items: baseline; }
-  h2 .n { color: var(--muted); font-weight: 400; font-variant-numeric: tabular-nums; }
-  .section-head p { margin: 0; font-size: 13px; color: var(--muted); }
-
-  .tasks { list-style: none; margin: 0; padding: 0; }
-  .task { display: grid; grid-template-columns: 44px minmax(0, 1fr); padding: 18px 0; border-bottom: 1px solid var(--line); }
-  .task-head { display: contents; }
-  .no { grid-column: 1; font: 500 13px/1.6 var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; padding-top: 1px; }
-  h3 { grid-column: 2; margin: 0; font: 500 16px/1.4 var(--text); text-wrap: balance; }
-  .task-body { grid-column: 2; display: flex; flex-direction: column; gap: 10px; margin-top: 8px; min-width: 0; }
-  .task.low h3 { color: var(--muted); }
-  .chips { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
-  .chip { font: 500 11.5px/1 var(--mono); padding: 5px 8px; border-radius: 999px; background: var(--attention-soft); color: var(--attention); }
-  .chip.hot { background: var(--accent-soft); color: var(--accent); }
-  .chip.quiet { background: var(--soft); color: var(--muted); }
-  .dates { font: 12px var(--mono); color: var(--muted); margin-left: 4px; }
-  .why { color: var(--fg); max-width: 64ch; }
-  .why p { margin: 0; }
-  .why p + p { margin-top: 8px; }
-  .waits { margin: 0; display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 13.5px; color: var(--muted); }
-  .waits span { font: 500 11.5px/1.9 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--attention); }
-  footer { font: 12px/1.6 var(--mono); color: var(--muted); border-top: 1px solid var(--line); padding-top: 16px; }
-
-  @media (max-width: 620px) {
-    .page { padding-block: 24px 48px; gap: 32px; }
-    h1 { font-size: 26px; }
-    .stages { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    .stage:nth-child(4) a { padding-left: 0; border-left: 0; }
-    .stage:nth-child(n+4) { border-top: 1px solid var(--line); }
-    .task { grid-template-columns: 36px minmax(0, 1fr); }
-  }
-  @media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
 </style>
 </head>
 <body>
-<div class="page">
-  <div class="masthead">
-    <div class="eyebrow">Снимок на 20 октября 2026, 11:47</div>
-    <h1>Бэклог АУФ Match</h1>
-    <p class="lede">Задачи по продукту и где каждая сейчас. Их делает <strong>агент Claude</strong>: ночью с 01:00 и днём раз в два часа, каждую — в отдельной ветке кода, с тестами и ревью. Слава проверяет результат и принимает или возвращает на доработку. Коллегам уходит только принятое.</p>
-  </div>
+<header>
+  <h1>Бэклог <span>· АУФ Match</span></h1>
+  <span id="agent" class="agent"><span class="dot"></span><span id="agent-text">…</span></span>
+  <span class="spacer"></span>
+  <button class="link" id="open-log">Журнал запусков</button>
+  <button class="btn" id="open-new">Новая задача</button>
+</header>
+<div class="board" id="board"></div>
+<div class="veil" id="veil" hidden></div>
+<aside class="drawer" id="drawer" hidden></aside>
 
-  <ol class="stages"><li class="stage"><a href="#draft"><span class="count">4</span><span class="label">Черновики</span></a></li><li class="stage"><a href="#queue"><span class="count">3</span><span class="label">Очередь</span></a></li><li class="stage empty"><a href="#run"><span class="count">0</span><span class="label">В работе</span></a></li><li class="stage attention"><a href="#wait"><span class="count">3</span><span class="label">Ждёт Славу</span></a></li><li class="stage"><a href="#ok"><span class="count">1</span><span class="label">Принято</span></a></li><li class="stage empty"><a href="#prod"><span class="count">0</span><span class="label">На проде</span></a></li></ol>
+<script>window.СНИМОК = {"снят":"2026-10-20T07:56:39.157Z","агент":{"работает":false,"с":null,"следующий":null},"карточки":[{"файл":"001-мёртвый-бэкенд.md","номер":"001","название":"Убрать мёртвый express-бэкенд","статус":"принято","приоритет":"обычный","тип":"техника","создана":"2026-10-19","обновлена":"2026-10-20","ветка":"agent/001-мёртвый-бэкенд","коммит":"b77882f","тело":"# Убрать мёртвый express-бэкенд\n\nПробная карточка: проверить, что агент проходит весь путь от карточки до отчёта.\nЕсли не нужна — «001 нет».\n\n## Что нужно\nУдалить `src/server/index.ts`, `src/server/routes/*` и зависимости `express`,\n`multer` (и их `@types/*`), если они больше ниоткуда не импортируются. Убрать\nабзац «Мёртвый код» из `CLAUDE.md` или переписать его, если что-то осталось.\n\n## Зачем\nПо `CLAUDE.md` это остатки первой архитектуры, их никто не вызывает. Они\nпутают: выглядят как второй бэкенд, и их приходится обходить при поиске.\n\n## Готово, когда\n- удалённое нигде не импортируется (поиск по `src`, `scripts`, `prisma`, `Dockerfile`, `package.json` scripts);\n- `npx tsc --noEmit`, `npx vitest run` и `npm run build` проходят;\n- `npm run dev` поднимается, `/api/health` отвечает 200;\n- `CLAUDE.md` не упоминает удалённое как существующее.\n\n## Ответы и правки Славы\n\n**2026-10-20:** принято\n\n## Отчёт агента\n**Что сделано.** Удалены старый express-сервер (`src/server/index.ts`) и его роуты (`src/server/routes/*`, пять файлов). Из зависимостей ушли express, multer и их типы, из `package.json` — скрипт `dev:server`, из `tsconfig.json` — исключение этих путей. Абзац «Мёртвый код» убран из `CLAUDE.md`: удалять больше нечего. Для пользователя ничего не меняется.\n\n**Как посмотреть.** `git show b77882f` в рабочем месте; в приложении изменений нет.\n\n**Проверки.** Поиск по `src`, `scripts`, `prisma`, `Dockerfile`, `package.json` — express/multer/`server/index`/`server/routes` больше нигде нет. tsc — без ошибок; vitest — 75 файлов, 873 теста прошли; `npx next dev -p 3100` поднялся, `/api/health` — 200 (база aufagent, ok); `npm run build` — без ошибок. Скриншоты не нужны: экранов правка не касается.\n\n**Решил сам.** `dotenv` оставил — его используют скрипты в `scripts/` и `embeddings.ts`. `src/server/utils/file-processing.ts` оставил — его используют живые роуты `api/candidates/upload` и `api/vacancies/parse-pdf`. В `package-lock.json` кроме удаления пакетов npm проставил метки `\"peer\": true` у части записей — это побочный эффект версии npm, версии пакетов не менялись.\n\n**Не проверено.** Docker-сборка не запускалась (в `Dockerfile` удалённое не упоминалось).\n\n**Заметил по пути.** Ничего существенного.\n\n**Ветка и коммит.** `agent/001-мёртвый-бэкенд`, `b77882f`, не запушено. Свежую копию базы снять не удалось — проверка шла на прежней aufagent.\n\n\n**Ревью** (2026-10-19, `git diff origin/production...agent/001-мёртвый-бэкенд`, b77882f)\n\nСущественного нет — можно принимать.\n\nПроверено:\n- «Готово, когда» выполнено. Удалённое нигде не импортируется: `git grep` по всему дереву (src, scripts, prisma, Dockerfile, .dockerignore, next.config.ts, src/instrumentation.ts, vitest.config.ts, README, DEPLOY, package.json) — express, multer, `server/index`, `server/routes`, `dev:server` не встречаются. `.github` в репозитории нет. Единственное упоминание — исторический план `docs/superpowers/plans/2026-05-26-candidate-pipeline.md`; его не трогать, это журнал.\n- `npx tsc --noEmit` в рабочем месте повторил — без ошибок. Тесты, сборку и `/api/health` не перезапускал, беру из отчёта исполнителя.\n- Рантайм без express/multer обходится: живые роуты Next их не используют. `src/server/utils/file-processing.ts` от multer не зависит. Express остаётся в `node_modules` только транзитивно, через `shadcn` → `@modelcontextprotocol/sdk` (там свой express 5 и `express-rate-limit`). Приложение его не загружает.\n- `package-lock.json`: удалены только поддерево multer (append-field, busboy, streamsearch, concat-stream, buffer-from, mkdirp, typedarray, xtend…) и `@types/*` для express и multer. Версии пакетов не менялись. 24 метки `\"peer\": true` стоят ровно на express 4.22.1 и его зависимостях: express больше не прямая зависимость, и в дереве его держит только peer-зависимость `express-rate-limit` (`express >= 4.11`). npm 10 помечает такие записи правильно — это не шум, откатывать не надо.\n- Запреты не нарушены: коммит только в `agent/*`, не запушен, русское сообщение с Co-Authored-By. Лишних файлов в коммите нет.\n\nМелочи (не блокируют, можно отдельной карточкой):\n- `.env.example` строка 4: `PORT=3001` — порт старого express-сервера. Next по умолчанию слушает 3000, `DEPLOY.md` тоже пишет «по умолчанию 3000». Если кто-то экспортирует переменные из этого файла в окружение, `next start` поднимется на 3001. Строку стоит убрать или поправить на 3000. В карточку правка не входила, поэтому исполнитель её справедливо не тронул.\n- Express 4 остаётся в lock как peer-хвост `express-rate-limit`. Свежий `npm install` с нуля, возможно, обошёлся бы express 5, который уже лежит внутри `@modelcontextprotocol/sdk`. На работу это не влияет.\n- `shadcn` (CLI) лежит в `dependencies`, а не в `devDependencies` и тянет в прод-образ MCP SDK с express 5. К карточке не относится, на заметку.\n","снимки":[],"изменена":0},{"файл":"002-матчинг-без-оценок.md","номер":"002","название":"Матчинг вакансии: убрать оценки по критериям, телеграм и «Смягчить требования»","статус":"черновик","приоритет":"высокий","тип":"интерфейс","создана":"2026-10-20","обновлена":"","ветка":"","коммит":"","тело":"# Матчинг вакансии: убрать оценки по критериям, телеграм и «Смягчить требования»\n\n## Что нужно\nНа вкладке «Матчинг» страницы вакансии (`src/app/vacancies/[id]/page.tsx`) в строке кандидата из результатов модели:\n- убрать «Оценки по критериям» (`CriteriaAccordion`) из раскрытой строки;\n- убрать телеграм из ссылок кандидата (`CandidateLinks`). Ссылки на портфолио оставить — по ним дизайн-лид смотрит работы;\n- оставить общий балл, объяснение (`matchExplanation`), «Сильные стороны» и «Пробелы» — это и есть «почему подходит / не подходит».\n\nУбрать кнопку «Смягчить требования» (на вкладке и в пустом результате), её обработчик и роут `api/vacancies/[id]/soften`.\n\n## Зачем\nРешение с созвона Славы и Дианы по продукту: рекрутеру на странице вакансии нужно понять, почему человек подходит. Оценки по критериям и контакты перегружают список, контакты есть в карточке кандидата. «Смягчить требования» делали для маленькой базы: кнопка молча переписывает критерии вакансии (обязательное → желательное, удаляет стоп-факторы) и не оставляет истории. Срок, названный на созвоне, — конец следующей недели.\n\n## Готово, когда\n- в раскрытой строке на «Матчинге» нет оценок по критериям и телеграма; есть балл, объяснение, сильные стороны, пробелы, ссылки на портфолио, 👍/🤔/👎;\n- кнопки «Смягчить требования» нет нигде, роут удалён, на него ничего не ссылается;\n- оценки по критериям по-прежнему считаются и хранятся (`MatchResult.criteriaScores`) — меняется только показ;\n- скриншоты «до» и «после» вкладки «Матчинг» с раскрытой строкой.\n\n## Перед стартом\n- **Сначала довести «подбор по данным».** Слава коммитит его: в основной папке не закоммичены правки в `vacancies/[id]/page.tsx` и `prematch-list.tsx`. Агент работает от production и их не видит — ветки столкнутся при слиянии. После коммита — «В очередь».\n- **Ответ на вопрос.** «Вопросы для уточнения» и «Сообщение кандидату» в раскрытой строке — убрать? Рекомендация: убрать вопросы (они есть в карточке кандидата, «Что уточнить у кандидата»), сообщение кандидату — тоже, раз контакты уходят из списка. 👍/👎 оставить: на них матчинг учится не предлагать похожих.\n\n## Ответы и правки Славы\n\n## Отчёт агента\n","снимки":[],"изменена":0},{"файл":"003-загрузка-несколько-вакансий.md","номер":"003","название":"Загрузка кандидатов: несколько вакансий сразу и без двойников","статус":"готово","приоритет":"высокий","тип":"интерфейс","создана":"2026-10-20","обновлена":"","ветка":"","коммит":"","тело":"# Загрузка кандидатов: несколько вакансий сразу и без двойников\n\n## Что нужно\nНа странице загрузки `/candidates/upload` (`page.tsx`, `use-bulk-upload.ts`, `api/candidates/upload/route.ts`):\n1. **Несколько вакансий.** Сейчас выбирается одна вакансия на всю загрузку. Нужен выбор нескольких (ноль, одна или больше). Каждый загруженный ставится на каждую выбранную вакансию (`approveToVacancy(..., \"upload\")` на каждую). Если пришли со страницы вакансии (`?vacancy=`), она выбрана заранее.\n2. **Двойники по ссылке на портфолио.** Сейчас сервер ищет совпадение только по почте и LinkedIn из резюме. Добавить проверку по нормализованной ссылке на портфолио — до разбора, чтобы не тратить скрейп и модель. Предупреждение то же (`DuplicateWarning`); вариант «отправить существующего на вакансию» ставит его на все выбранные вакансии.\n3. **Источник обязателен и на сервере.** Сейчас `origin` обязателен только в интерфейсе, сервер принимает пустой. Без источника — 400 с понятным текстом.\n\n## Зачем\nРешение с созвона Славы и Дианы: рекрутер заводит человека сразу на несколько вакансий. Сейчас ради второй вакансии его загружают ещё раз, и в базе появляется двойник — проверка по почте его не ловит (почты в портфолио часто нет). Срок, названный на созвоне, — конец следующей недели.\n\n## Готово, когда\n- на странице загрузки можно выбрать несколько вакансий; после загрузки человек на этапах каждой — проверено в aufagent;\n- повторная загрузка с той же ссылкой на портфолио (в том числе с `www`, `http`/`https`, слэшем в конце) показывает предупреждение о двойнике, а не создаёт второго;\n- «отправить существующего на вакансию» ставит его на все выбранные вакансии;\n- запрос без источника получает 400; интерфейс по-прежнему не даёт отправить без источника;\n- нормализация ссылки и сравнение — в `src/lib` с тестом (если подходящая нормализация уже есть, например в импорте JSON, — использовать её);\n- скриншоты «до» и «после» страницы загрузки с выбранными вакансиями.\n\nКлюча модели у агента нет: где загрузка упирается в разбор резюме, проверить постановку на вакансии через путь «отправить существующего» и тестом, а в отчёте отметить «нужна проверка моделью».\n\n## Ответы и правки Славы\n\n## Отчёт агента\n","снимки":[],"изменена":0},{"файл":"004-сводка-за-период.md","номер":"004","название":"Сводка этапов: фильтр по периоду","статус":"вопрос","приоритет":"обычный","тип":"интерфейс","создана":"2026-10-20","обновлена":"","ветка":"","коммит":"","тело":"# Сводка этапов: фильтр по периоду\n\n## Что нужно\nНа вкладке «Сводка» (`/pipeline?tab=report`, `src/app/pipeline/stage-report.tsx`, API `api/analytics/stages`) добавить выбор периода, как в Хантфлоу: сейчас, неделя, месяц, свои даты.\n\n## Зачем\nСозвон Славы и Дианы: нужна картина за период, как в отчётах Хантфлоу. Сейчас «Сводка» — снимок «кто на каком этапе сейчас», фильтр один: «Открытые / все вакансии». Сложные метрики уходят в отдельную вкладку «Аналитика» (карточка 009), саму «Сводку» не удаляем.\n\n## Вопросы до старта\n1. **Что показывать за период.** Сейчас в ячейке — сколько людей стоит на этапе сейчас. Для периода два прочтения: (а) сколько людей перевели на этап за период — по истории переводов, как воронка в Хантфлоу; (б) снимок на конец периода. Рекомендация — (а), а «сейчас» оставить режимом по умолчанию, как сегодня.\n2. **Что убрать.** По расшифровке со «Сводки» убрали фильтр по вакансиям и блок с телеграмом, но на «Сводке» нет ни того, ни другого — чипсы вакансий есть на соседней вкладке «Доска». Речь была о «Доске», или убирать нечего? Рекомендация: пока ничего не убирать.\n3. **Поздние этапы.** Оффер, отказ и «вышел» сейчас свёрнуты в строку «ещё N». В режиме за период показать их отдельными столбцами (сколько отказов за неделю)? Рекомендация — да.\n\n## Готово, когда\n- на «Сводке» есть переключатель: сейчас / неделя / месяц / свои даты; выбор живёт в адресе и переживает обновление страницы;\n- за период числа считаются так, как решено в вопросе 1; подсчёт — в `src/lib` с тестом (границы периода по Москве, человек, переведённый дважды за период);\n- режим «сейчас» показывает то же, что сегодня;\n- скриншоты «до» и «после».\n\n## Ответы и правки Славы\n\n## Отчёт агента\n","снимки":[],"изменена":0},{"файл":"005-отмена-перевода.md","номер":"005","название":"Отмена перевода между этапами","статус":"вопрос","приоритет":"обычный","тип":"интерфейс","создана":"2026-10-20","обновлена":"","ветка":"","коммит":"","тело":"# Отмена перевода между этапами\n\n## Что нужно\nРекрутер ошибся этапом — может отменить перевод: человек возвращается на прежний этап, ошибочный перевод не засоряет историю. Комментарии менять не нужно: их и сейчас можно только добавлять, правки и удаления нет ни в интерфейсе, ни в API.\n\n## Зачем\nСозвон Славы и Дианы: перевод между этапами должен быть обратимым, а лишние действия не должны висеть в истории. Сейчас отменить перевод нельзя нигде, кроме отсмотра подборки (там отмена добавляет обратный перевод). Ошибочные переводы испортят «Сводку» за период и аналитику — они считаются по истории переводов (карточки 004, 009).\n\n## Вопросы до старта\n1. **Удалять ошибочный перевод или писать обратный?** Рекомендация: удалять — тогда и лента, и отчёты чистые. Обратный перевод честнее как журнал, но в отчётах ошибка посчитается.\n2. **Что и когда можно отменить.** Рекомендация: только последний перевод человека по вакансии и только в течение суток; позже — обычным переводом.\n3. **Где кнопка.** Рекомендация: «Отменить» во всплывающем сообщении сразу после перевода (на досках и в карточке) и у последней записи в ленте «Обзора».\n\n## Готово, когда\n- перевод можно отменить там и так, как решено в вопросах;\n- после отмены человек на прежнем этапе, а всё, что перевод поменял побочно, возвращено: причина отказа, 👎 в матчинге при нашем отказе, дни на этапе;\n- правило «что можно отменить» — в `src/lib` с тестом;\n- скриншоты.\n\n## Ответы и правки Славы\n\n## Отчёт агента\n","снимки":[],"изменена":0},{"файл":"006-вакансия-без-скоринга.md","номер":"006","название":"Создание вакансии без шага «Скоринг»","статус":"готово","приоритет":"обычный","тип":"интерфейс","создана":"2026-10-20","обновлена":"2026-10-20","ветка":"","коммит":"","тело":"# Создание вакансии без шага «Скоринг»\n\n## Что нужно\nВ мастере создания вакансии (`src/app/vacancies/new/page.tsx`) убрать шаг «Скоринг» (критерии, веса, разбор критериев из текста) и критерии из предпросмотра. Без него критерии появятся сами: матчинг генерирует их по вакансии, если их нет. Править — в режиме «Редактировать» вакансии (`VCriteriaEditor`, уже есть).\n\n## Зачем\nСозвон Славы и Дианы: критерии нужны один раз, при создании или смене подхода к подбору, и перегружают рекрутеру создание вакансии.\n\n## Вопросы до старта\n1. **Какой мастер.** В основной папке лежит прототип нового мастера `src/app/prototype/vacancy-new` (не в git). Убираем шаг из нынешнего мастера, или это войдёт в новый, и нынешний не трогаем?\n2. **«Обзор» вакансии.** Там критерии тоже видны — списком и с кнопкой «Сгенерировать / Перегенерировать». Рекомендация: заменить на одну строку «Критерии: N» со ссылкой в «Редактировать». Диана сомневалась, что рекрутерам скоринг не нужен совсем, — так он остаётся под рукой, но не занимает место.\n\n## Готово, когда\n- в мастере нет шага «Скоринг»; вакансия создаётся без критериев;\n- в «Редактировать» критерии правятся как раньше;\n- «Обзор» — по ответу на вопрос 2;\n- что критерии генерируются при первом подборе — «нужна проверка моделью»;\n- скриншоты мастера «до» и «после».\n\n## Ответы и правки Славы\n\n**2026-10-20, ответ:** нет. критерии нужны. не нужно их показывать, потому что они занимают место. спрятать в редактирование вакансии\n\n## Отчёт агента\n","снимки":[],"изменена":0},{"файл":"007-описание-в-подборке.md","номер":"007","название":"Описание вакансии в подборке для клиента","статус":"вопрос","приоритет":"обычный","тип":"интерфейс","создана":"2026-10-20","обновлена":"","ветка":"","коммит":"","тело":"# Описание вакансии в подборке для клиента\n\n## Что нужно\nНа странице подборки для клиента (`/s/[token]`, `src/app/s/[token]/page.tsx`, данные — `api/public/shortlist/[token]`) показать описание вакансии под названием. Сейчас в шапке только название, «Для {клиент}», дата обновления и рекрутер.\n\n## Зачем\nСозвон Славы и Дианы: при публикации подборки описание вакансии должно попадать к клиенту и обновляться из брифа.\n\n## Вопросы до старта\n1. **Какой текст.** Есть три кандидата: описание продукта (`productDescription`), выжимка брифа (`briefingSummary`), портрет (`portraitText` — писался для агентств и прячет имя клиента). Рекомендация: выжимка брифа под заголовком вроде «Кого ищем» — клиент видит, как мы поняли задачу.\n2. **Когда обновлять.** Рекомендация: текст снимается с вакансии при «Опубликовать»; на вкладке «Подборка клиенту» рекрутер видит, что увидит клиент, и может поправить до публикации.\n\n## Готово, когда\n- на странице клиента под названием — описание вакансии;\n- текст выбирается и обновляется так, как решено в вопросах;\n- контактов, оценок и зарплаты на странице клиента по-прежнему нет;\n- скриншоты страницы клиента («Как видит клиент») «до» и «после».\n\n## Ответы и правки Славы\n\n## Отчёт агента\n","снимки":[],"изменена":0},{"файл":"008-взять-на-несколько.md","номер":"008","название":"«Взять на вакансию» из карточки — сразу на несколько","статус":"черновик","приоритет":"обычный","тип":"интерфейс","создана":"2026-10-20","обновлена":"","ветка":"","коммит":"","тело":"# «Взять на вакансию» из карточки — сразу на несколько\n\n## Что нужно\nВ меню «Взять на вакансию ▾» в шапке карточки и в блоке «Куда взять» (`src/app/candidates/[id]/take-vacancy.tsx`) отметить несколько вакансий и поставить человека на все одним действием. Сейчас — по одной вакансии за клик.\n\n## Зачем\nСозвон Славы и Дианы: при переносе человека из базы рекрутер сразу назначает ему несколько вакансий. Пара к карточке 003 (то же при загрузке).\n\n## Перед стартом\n- **Решить, нужно ли.** Сейчас на несколько вакансий ставят кликами по очереди. Этого мало, нужен мультивыбор?\n- **Уточнить «источник при переносе из базы».** У человека из базы источник уже есть. Если речь о том, с какой кнопки человек попал на этапы, — это уже пишется (`Pipeline.addedVia`). Или имелось в виду что-то другое?\n- **Сначала довести «подбор по данным».** `take-vacancy.tsx` изменён в основной папке и не закоммичен — агент его не видит, ветки столкнутся.\n\n## Готово, когда\n- в меню можно отметить несколько вакансий и взять на все разом; человек на этапах каждой, `addedVia` у каждой верный;\n- вакансии, на которых человек уже есть, в выборе недоступны;\n- скриншоты.\n\n## Ответы и правки Славы\n\n## Отчёт агента\n","снимки":[],"изменена":0},{"файл":"009-аналитика-за-период.md","номер":"009","название":"Аналитика: одобрения и отказы за период","статус":"черновик","приоритет":"обычный","тип":"данные","создана":"2026-10-20","обновлена":"","ветка":"","коммит":"","тело":"# Аналитика: одобрения и отказы за период\n\n## Что нужно\nОтдельная вкладка «Аналитика» с метриками одобрения и отказа за период. Состав — по требованиям Дианы. Сейчас отдельной страницы нет: `/analytics` перекидывает на «Сводку», одобрения и отказы за период нигде не считаются.\n\n## Зачем\nСозвон Славы и Дианы: сложные метрики уходят со «Сводки» в отдельную вкладку, чтобы не мешать работе с этапами. Пока не договорились, что считать «одобрением», есть риск неточных данных.\n\n## Ждёт\n- **Требования Дианы:** какие метрики; что считается одобрением и отказом (одобрение дизайн-лида? передача клиенту? оффер?); за какие периоды; кто смотрит.\n- Что уже пишется для подсчёта: переводы с датой и автором (`StageTransition`); кто отказал и почему (`rejectBy`, `rejectReason`, с 06.10); откуда человек (`Candidate.origin`, с 06.10); с какой кнопки попал на этапы (`Pipeline.addedVia`); история вакансии (`VacancyEvent`). План второй части — `docs/superpowers/specs/2026-10-06-analytics-data-capture-design.md`.\n\n## Готово, когда\nУточнить по требованиям Дианы.\n\n## Ответы и правки Славы\n\n## Отчёт агента\n","снимки":[],"изменена":0},{"файл":"010-безопасность.md","номер":"010","название":"Безопасность: технические правки","статус":"черновик","приоритет":"низкий","тип":"техника","создана":"2026-10-20","обновлена":"","ветка":"","коммит":"","тело":"# Безопасность: технические правки\n\n## Зачем\nСо старой доски («безопасность данных»). Мелкие технические правки по итогам разбора кода 20.10.\n\n## Подробности\nТехнические подробности этой задачи на публичной странице не показываются.\n","снимки":[],"изменена":0},{"файл":"011-порт-в-env-example.md","номер":"011","название":".env.example: убрать порт старого сервера","статус":"готово","приоритет":"низкий","тип":"техника","создана":"2026-10-20","обновлена":"","ветка":"","коммит":"","тело":"# .env.example: убрать порт старого сервера\n\n## Что нужно\nВ `.env.example` осталась строка `PORT=3001` — порт удалённого express-сервера (карточка 001). Next по умолчанию слушает 3000, `Dockerfile` и `DEPLOY.md` тоже говорят о 3000. Убрать строку или поставить 3000 с комментарием, как в `DEPLOY.md`.\n\n## Зачем\nКто скопирует пример в `.env`, получит приложение на 3001, а прокси из `DEPLOY.md` смотрит на 3000. Замечание ревьюера к карточке 001.\n\n## Готово, когда\n- в `.env.example` нет 3001; порт описан так же, как в `DEPLOY.md`;\n- больше нигде в репозитории 3001 как порт приложения не упоминается (кроме исторических планов в `docs/`).\n\n## Ответы и правки Славы\n\n## Отчёт агента\n","снимки":[],"изменена":0}],"журнал":[{"дата":"2026-10-20","текст":"\n## 10:58 — день\n\nкарточек нет (001 — на проверке, ждёт ответа Славы)\n"},{"дата":"2026-10-19","текст":"# Запуски агента — 2026-10-19\n\n## 22:02, день (одна карточка)\n\n- Подготовка: Postgres на 5433 уже работал. Свежую копию базы (reset-db.sh) снять не дали: система разрешений отклонила запуск. Работали на прежней aufagent. Хвостов в рабочем месте не было, package-lock совпадает с origin/production.\n- **001 Убрать мёртвый express-бэкенд** — на проверке. Ветка agent/001-мёртвый-бэкенд, коммит b77882f. tsc чистый, vitest 873/873, build прошёл, /api/health отдал 200. Ревью: существенного нет. Мелочи: в .env.example остался PORT=3001, в lock остался express 4 как хвост express-rate-limit, shadcn лежит в dependencies.\n- Сбои: только reset-db.sh, см. выше.\n"}]};</script>
+<script>
+// Колонки идут по пути задачи. «Ход» — чьё действие двигает карточку дальше:
+// так видно, где задача ждёт вас, а где работает агент.
+const КОЛОНКИ = [
+  { ключ: "draft", имя: "Черновики", статусы: ["черновик"], ход: "вы", подсказка: "Агент не берёт. Переведите в очередь, когда задача готова", пусто: "Нет черновиков" },
+  { ключ: "queue", имя: "Очередь", статусы: ["переделать", "готово"], ход: "агент", подсказка: "Агент возьмёт в ближайший запуск, сверху — первой", пусто: "Пусто — добавьте задачу" },
+  { ключ: "run", имя: "В работе", статусы: ["в работе"], ход: "агент", подсказка: "Агент делает, проверяет, ревьюер смотрит код", пусто: "Агент сейчас ничего не делает" },
+  { ключ: "wait", имя: "Ждёт вас", статусы: ["на проверке", "вопрос"], ход: "вы", ваша: true, подсказка: "Посмотрите результат и решите — или ответьте на вопрос", пусто: "Проверять нечего" },
+  { ключ: "ok", имя: "Принято", статусы: ["принято"], ход: "Claude", подсказка: "Выкачу на прод, когда напишете «давай на прод»", пусто: "Пусто" },
+  { ключ: "prod", имя: "На проде", статусы: ["на проде"], ход: "—", подсказка: "Видят коллеги", пусто: "Пусто" },
+  // «Не нужно» — в стороне от пути, видна, только когда в ней что-то есть
+  { ключ: "no", имя: "Не нужно", статусы: ["отказ"], ход: "—", подсказка: "Ветка осталась — можно вернуть в очередь", пусто: "Пусто", сбоку: true },
+];
+const ПРИОРИТЕТ = { высокий: 0, обычный: 1, низкий: 2 };
+const ЧИП = { "на проверке": ["wait", "проверить"], вопрос: ["q", "вопрос"], переделать: ["q", "переделать"], "в работе": ["run", "в работе"], принято: ["ok", "принято"], "на проде": ["ok", "на проде"] };
 
-<section id="draft">
-  <header class="section-head"><h2>Черновики<span class="n">4</span></h2><p>Ещё не в работе: ждут решения или данных</p></header>
-  <ol class="tasks"><li class="task">
-  <div class="task-head"><span class="no">002</span><h3>Матчинг вакансии: убрать оценки по критериям, телеграм и «Смягчить требования»</h3></div>
-  <div class="task-body">
-    <div class="chips"><span class="chip hot">срочно</span><span class="chip quiet">интерфейс</span><span class="dates">заведена 20 октября</span></div>
-    <div class="why"><p>Решение с созвона Славы и Дианы по продукту: рекрутеру на странице вакансии нужно понять, почему человек подходит. Оценки по критериям и контакты перегружают список, контакты есть в карточке кандидата. «Смягчить требования» делали для маленькой базы: кнопка молча переписывает критерии вакансии (обязательное → желательное, удаляет стоп-факторы) и не оставляет истории. Срок, названный на созвоне, — конец следующей недели.</p></div>
-    <p class="waits"><span>Ждёт</span>Сначала довести «подбор по данным» · Ответ на вопрос</p>
-  </div>
-</li><li class="task">
-  <div class="task-head"><span class="no">008</span><h3>«Взять на вакансию» из карточки — сразу на несколько</h3></div>
-  <div class="task-body">
-    <div class="chips"><span class="chip quiet">интерфейс</span><span class="dates">заведена 20 октября</span></div>
-    <div class="why"><p>Созвон Славы и Дианы: при переносе человека из базы рекрутер сразу назначает ему несколько вакансий. Пара к карточке 003 (то же при загрузке).</p></div>
-    <p class="waits"><span>Ждёт</span>Решить, нужно ли · Уточнить «источник при переносе из базы» · Сначала довести «подбор по данным»</p>
-  </div>
-</li><li class="task">
-  <div class="task-head"><span class="no">009</span><h3>Аналитика: одобрения и отказы за период</h3></div>
-  <div class="task-body">
-    <div class="chips"><span class="chip quiet">данные</span><span class="dates">заведена 20 октября</span></div>
-    <div class="why"><p>Созвон Славы и Дианы: сложные метрики уходят со «Сводки» в отдельную вкладку, чтобы не мешать работе с этапами. Пока не договорились, что считать «одобрением», есть риск неточных данных.</p></div>
-    <p class="waits"><span>Ждёт</span>Требования Дианы</p>
-  </div>
-</li><li class="task low">
-  <div class="task-head"><span class="no">010</span><h3>Безопасность: технические правки</h3></div>
-  <div class="task-body">
-    <div class="chips"><span class="chip quiet">техника</span><span class="dates">заведена 20 октября</span></div>
-    <div class="why"><p>Со старой доски («безопасность данных»). Мелкие технические правки по итогам разбора кода 20.10.</p></div>
-    
-  </div>
-</li></ol>
-</section>
-<section id="queue">
-  <header class="section-head"><h2>Очередь<span class="n">3</span></h2><p>Агент возьмёт в ближайший запуск</p></header>
-  <ol class="tasks"><li class="task">
-  <div class="task-head"><span class="no">003</span><h3>Загрузка кандидатов: несколько вакансий сразу и без двойников</h3></div>
-  <div class="task-body">
-    <div class="chips"><span class="chip hot">срочно</span><span class="chip quiet">интерфейс</span><span class="dates">заведена 20 октября</span></div>
-    <div class="why"><p>Решение с созвона Славы и Дианы: рекрутер заводит человека сразу на несколько вакансий. Сейчас ради второй вакансии его загружают ещё раз, и в базе появляется двойник — проверка по почте его не ловит (почты в портфолио часто нет). Срок, названный на созвоне, — конец следующей недели.</p></div>
-    
-  </div>
-</li><li class="task">
-  <div class="task-head"><span class="no">006</span><h3>Создание вакансии без шага «Скоринг»</h3></div>
-  <div class="task-body">
-    <div class="chips"><span class="chip quiet">интерфейс</span><span class="dates">заведена 20 октября</span></div>
-    <div class="why"><p>Созвон Славы и Дианы: критерии нужны один раз, при создании или смене подхода к подбору, и перегружают рекрутеру создание вакансии.</p></div>
-    
-  </div>
-</li><li class="task low">
-  <div class="task-head"><span class="no">011</span><h3>.env.example: убрать порт старого сервера</h3></div>
-  <div class="task-body">
-    <div class="chips"><span class="chip quiet">техника</span><span class="dates">заведена 20 октября</span></div>
-    <div class="why"><p>Кто скопирует пример в .env, получит приложение на 3001, а прокси из DEPLOY.md смотрит на 3000. Замечание ревьюера к карточке 001.</p></div>
-    
-  </div>
-</li></ol>
-</section>
+let состояние = null;
+let открыто = null;   // файл карточки, "new", "log" или null
+let отпечаток = "";
+// Снимок для GitHub Pages (tools/site.mjs): состояние вшито в страницу,
+// доска только показывает — без кнопок, без автообновления
+const СНИМОК = window.СНИМОК || null;
 
-<section id="wait">
-  <header class="section-head"><h2>Ждёт Славу<span class="n">3</span></h2><p>Проверить результат или ответить на вопросы</p></header>
-  <ol class="tasks"><li class="task">
-  <div class="task-head"><span class="no">004</span><h3>Сводка этапов: фильтр по периоду</h3></div>
-  <div class="task-body">
-    <div class="chips"><span class="chip">вопросы</span><span class="chip quiet">интерфейс</span><span class="dates">заведена 20 октября</span></div>
-    <div class="why"><p>Созвон Славы и Дианы: нужна картина за период, как в отчётах Хантфлоу. Сейчас «Сводка» — снимок «кто на каком этапе сейчас», фильтр один: «Открытые / все вакансии». Сложные метрики уходят в отдельную вкладку «Аналитика» (карточка 009), саму «Сводку» не удаляем.</p></div>
-    <p class="waits"><span>Ждёт</span>3 вопроса к Славе до старта</p>
-  </div>
-</li><li class="task">
-  <div class="task-head"><span class="no">005</span><h3>Отмена перевода между этапами</h3></div>
-  <div class="task-body">
-    <div class="chips"><span class="chip">вопросы</span><span class="chip quiet">интерфейс</span><span class="dates">заведена 20 октября</span></div>
-    <div class="why"><p>Созвон Славы и Дианы: перевод между этапами должен быть обратимым, а лишние действия не должны висеть в истории. Сейчас отменить перевод нельзя нигде, кроме отсмотра подборки (там отмена добавляет обратный перевод). Ошибочные переводы испортят «Сводку» за период и аналитику — они считаются по истории переводов (карточки 004, 009).</p></div>
-    <p class="waits"><span>Ждёт</span>3 вопроса к Славе до старта</p>
-  </div>
-</li><li class="task">
-  <div class="task-head"><span class="no">007</span><h3>Описание вакансии в подборке для клиента</h3></div>
-  <div class="task-body">
-    <div class="chips"><span class="chip">вопросы</span><span class="chip quiet">интерфейс</span><span class="dates">заведена 20 октября</span></div>
-    <div class="why"><p>Созвон Славы и Дианы: при публикации подборки описание вакансии должно попадать к клиенту и обновляться из брифа.</p></div>
-    <p class="waits"><span>Ждёт</span>2 вопроса к Славе до старта</p>
-  </div>
-</li></ol>
-</section>
-<section id="ok">
-  <header class="section-head"><h2>Принято<span class="n">1</span></h2><p>Готово, выйдет со следующей выкаткой</p></header>
-  <ol class="tasks"><li class="task">
-  <div class="task-head"><span class="no">001</span><h3>Убрать мёртвый express-бэкенд</h3></div>
-  <div class="task-body">
-    <div class="chips"><span class="chip quiet">техника</span><span class="dates">заведена 19 октября · обновлена 20 октября</span></div>
-    <div class="why"><p>По CLAUDE.md это остатки первой архитектуры, их никто не вызывает. Они путают: выглядят как второй бэкенд, и их приходится обходить при поиске.</p></div>
-    
-  </div>
-</li></ol>
-</section>
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const время = (iso) => new Date(iso).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+const короткаяДата = (д) => (д ? д.slice(5).split("-").reverse().join(".") : "");
 
+function inline(s) {
+  return s
+    .replace(/`([^`]+)`/g, "<code>$1</code>")
+    .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+    .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noreferrer">$1</a>');
+}
+function markdown(текст) {
+  const строки = esc(текст).split("\n");
+  let html = "", список = null, абзац = [], код = null;
+  const закрыть = () => {
+    if (абзац.length) { html += `<p>${inline(абзац.join(" "))}</p>`; абзац = []; }
+    if (список) { html += `</${список}>`; список = null; }
+  };
+  for (const с of строки) {
+    if (код !== null) {
+      if (/^```/.test(с)) { html += `<pre><code>${код.join("\n")}</code></pre>`; код = null; } else код.push(с);
+      continue;
+    }
+    if (/^```/.test(с)) { закрыть(); код = []; continue; }
+    const з = с.match(/^(#{1,3})\s+(.*)$/);
+    if (з) { закрыть(); html += `<h${з[1].length}>${inline(з[2])}</h${з[1].length}>`; continue; }
+    const п = с.match(/^\s*[-•]\s+(.*)$/), н = с.match(/^\s*\d+\.\s+(.*)$/);
+    if (п || н) {
+      if (абзац.length) { html += `<p>${inline(абзац.join(" "))}</p>`; абзац = []; }
+      const вид = п ? "ul" : "ol";
+      if (список !== вид) { if (список) html += `</${список}>`; html += `<${вид}>`; список = вид; }
+      html += `<li>${inline((п || н)[1])}</li>`;
+      continue;
+    }
+    if (!с.trim()) { закрыть(); continue; }
+    if (список && /^\s{2,}/.test(с)) { html = html.replace(/<\/li>$/, ` ${inline(с.trim())}</li>`); continue; }
+    if (список) { html += `</${список}>`; список = null; }
+    абзац.push(с.trim());
+  }
+  if (код !== null) html += `<pre><code>${код.join("\n")}</code></pre>`;
+  закрыть();
+  return html;
+}
 
+// Отчёт агента — первым: на проверке важно, что сделано, а задачу вы помните.
+// Пустые разделы («Ответы и правки Славы» до первого ответа) не показываем.
+function поПорядку(тело) {
+  const части = тело.split(/\n(?=## )/);
+  const вступление = части.shift().replace(/^#\s+.*$/m, "").trim();
+  const разделы = части
+    .map((ч) => { const [з, ...ост] = ч.split("\n"); return { з: з.replace(/^##\s+/, "").trim(), т: ост.join("\n").trim() }; })
+    .filter((р) => р.т);
+  const отчёт = разделы.filter((р) => р.з === "Отчёт агента" || р.з === "Вопросы агента");
+  const задача = разделы.filter((р) => !отчёт.includes(р));
+  const блок = (р) => `## ${р.з}\n\n${р.т}`;
+  return [...отчёт.map(блок), отчёт.length ? "## Задача" : "", вступление, ...задача.map(блок)].filter(Boolean).join("\n\n");
+}
 
-  <footer>Собрано из карточек бэклога 20 октября 2026, 11:47. Задачи и решения по ним ведёт Слава.</footer>
-</div>
+// Порядок очереди — как берёт агент (AGENT.md): «переделать», потом приоритет, потом номер
+function порядок(a, b) {
+  if (a.статус !== b.статус && a.статус === "переделать") return -1;
+  if (a.статус !== b.статус && b.статус === "переделать") return 1;
+  const п = (ПРИОРИТЕТ[a.приоритет] ?? 1) - (ПРИОРИТЕТ[b.приоритет] ?? 1);
+  return п || a.номер.localeCompare(b.номер);
+}
+
+function рисоватьАгента() {
+  if (СНИМОК) {
+    document.getElementById("agent-text").textContent = `Снимок на ${new Date(СНИМОК.снят).toLocaleString("ru-RU", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })}`;
+    return;
+  }
+  const а = состояние.агент;
+  document.getElementById("agent").classList.toggle("busy", а.работает);
+  const когда = а.следующий
+    ? (new Date(а.следующий).toDateString() === new Date().toDateString() ? "в " : "завтра в ") + время(а.следующий)
+    : "";
+  document.getElementById("agent-text").textContent = а.работает ? `Агент работает с ${время(а.с)}` : `Агент ждёт · следующий запуск ${когда}`;
+}
+
+function карточкаНаДоске(к, колонка, место) {
+  const [вид, текст] = ЧИП[к.статус] || ["", ""];
+  const чип = текст && !(колонка.ключ === "ok" || колонка.ключ === "prod") ? `<span class="chip ${вид}">${текст}</span>` : "";
+  const следующая = колонка.ключ === "queue" && место === 0 ? `<span class="chip">следующая</span>` : "";
+  const живая = к.статус === "в работе" ? `<span class="dot live"></span>` : "";
+  return `
+    <button class="card ${открыто === к.файл ? "sel" : ""}" data-file="${esc(к.файл)}">
+      <span class="top">${живая}<span class="num">${esc(к.номер)}</span><span>${esc(к.тип)}</span></span>
+      <span class="t">${esc(к.название)}</span>
+      <span class="m">${чип}${следующая}${к.приоритет !== "обычный" ? `<span class="chip">${esc(к.приоритет)}</span>` : ""}<span class="num">${короткаяДата(к.обновлена || к.создана)}</span></span>
+    </button>`;
+}
+
+function рисоватьДоску() {
+  const доска = document.getElementById("board");
+  доска.innerHTML = КОЛОНКИ.map((кол) => {
+    const карточки = состояние.карточки.filter((к) => кол.статусы.includes(к.статус)).sort(порядок);
+    if (кол.сбоку && !карточки.length) return "";
+    const путь = !кол.сбоку && кол.ключ !== "prod";
+    return `
+      <section class="col ${кол.ваша ? "yours" : ""} ${путь ? "flow" : ""}">
+        <div class="col-head">
+          <div class="col-title"><span>${esc(кол.имя)}</span><span class="num">${карточки.length}</span></div>
+          <div class="turn">ход: ${esc(кол.ход)}</div>
+          <div class="col-hint">${esc(кол.подсказка)}</div>
+        </div>
+        <div class="col-body">${карточки.length ? карточки.map((к, м) => карточкаНаДоске(к, кол, м)).join("") : `<div class="empty">${esc(кол.пусто)}</div>`}</div>
+      </section>`;
+  }).join("");
+}
+
+function действия(к) {
+  const кнопкаНет = `<button class="btn quiet" data-act="отказ">Не нужно</button>`;
+  switch (к.статус) {
+    case "на проверке":
+      return `<div class="bar" id="bar-main">
+          <button class="btn primary" data-act="принять">Принять</button>
+          <button class="btn" data-show-redo>Переделать</button>
+          ${кнопкаНет}
+        </div>
+        <div id="redo" hidden>
+          <textarea id="redo-text" placeholder="Что поправить"></textarea>
+          <div class="bar"><button class="btn primary" data-act="переделать" data-need-text="redo-text">Вернуть агенту</button><button class="btn quiet" data-hide-redo>Отмена</button></div>
+        </div>`;
+    case "вопрос":
+      return `<textarea id="answer-text" placeholder="Ответ на вопросы агента"></textarea>
+        <div class="bar"><button class="btn primary" data-act="ответить" data-need-text="answer-text">Ответить и вернуть в очередь</button>${кнопкаНет}</div>`;
+    case "черновик":
+      return `<div class="bar"><button class="btn primary" data-act="вРаботу">В очередь</button>${кнопкаНет}</div>`;
+    case "готово":
+    case "переделать":
+      return `<div class="bar"><span class="hint">Агент возьмёт в ближайший запуск.</span><span class="spacer"></span><button class="btn" data-act="вЧерновик">Придержать</button></div>`;
+    case "в работе":
+      return `<div class="bar"><span class="hint">Агент делает эту задачу. Отчёт появится здесь.</span></div>`;
+    case "принято":
+      return `<div class="bar"><span class="hint">Принято. Выкачу на прод, когда напишете в чате «давай на прод».</span></div>`;
+    case "на проде":
+      return `<div class="bar"><span class="hint">На проде — видят коллеги.</span></div>`;
+    case "отказ":
+      return `<div class="bar"><span class="hint">Не нужно.</span><span class="spacer"></span><button class="btn" data-act="вРаботу">Вернуть в очередь</button></div>`;
+    default:
+      return "";
+  }
+}
+
+function рисоватьКарточку(к) {
+  const [вид, текст] = ЧИП[к.статус] || ["", к.статус];
+  const колонка = КОЛОНКИ.find((кол) => кол.статусы.includes(к.статус));
+  const снимки = к.снимки.length
+    ? `<div class="shots">${к.снимки.map((с) => `<a href="/shots/${encodeURIComponent(с)}" target="_blank"><img src="/shots/${encodeURIComponent(с)}" alt=""><span>${esc(с)}</span></a>`).join("")}</div>`
+    : "";
+  return `
+    <button class="btn quiet close" data-close aria-label="Закрыть">✕</button>
+    <div class="eyebrow num">${esc(к.номер)} · создана ${esc(к.создана)}</div>
+    <h2 class="title">${esc(к.название)}</h2>
+    <div class="chips">
+      <span class="chip ${вид}">${esc(текст || к.статус)}</span>
+      <span class="chip">${esc(к.тип)}</span>
+      ${к.приоритет !== "обычный" ? `<span class="chip">${esc(к.приоритет)}</span>` : ""}
+      ${к.ветка ? `<span class="meta">${esc(к.ветка)}${к.коммит ? " · " + esc(к.коммит) : ""}</span>` : ""}
+    </div>
+    ${колонка ? `<div class="where">Колонка «${esc(колонка.имя)}», ход: ${esc(колонка.ход)}. ${esc(колонка.подсказка)}.</div>` : ""}
+    ${СНИМОК ? "" : `<div class="actions">${действия(к)}<div class="err" id="err"></div></div>`}
+    ${снимки}
+    <div class="md">${markdown(поПорядку(к.тело))}</div>`;
+}
+
+function рисоватьНовую() {
+  return `
+    <button class="btn quiet close" data-close aria-label="Закрыть">✕</button>
+    <div class="eyebrow">Новая задача</div>
+    <h2 class="title">Что сделать агенту</h2>
+    <form class="form" id="new-form">
+      <label>Название<input name="название" required placeholder="Коротко, как на доске"></label>
+      <label>Что нужно<textarea name="нужно" required placeholder="Своими словами"></textarea></label>
+      <label>Зачем<textarea name="зачем" placeholder="Чей сценарий и что сейчас мешает"></textarea></label>
+      <label>Готово, когда<textarea name="готово" placeholder="По признаку на строку"></textarea><small>Чем точнее признаки, тем реже агент вернётся с вопросом.</small></label>
+      <div class="two">
+        <label>Тип<select name="тип"><option>интерфейс</option><option>баг</option><option>техника</option><option>данные</option></select></label>
+        <label>Приоритет<select name="приоритет"><option>обычный</option><option>высокий</option><option>низкий</option></select></label>
+      </div>
+      <label class="check"><input type="checkbox" name="черновик"> В черновики — агент не возьмёт, пока не переведёте в очередь</label>
+      <div><button class="btn primary" type="submit">Добавить</button> <button class="btn quiet" type="button" data-close>Отмена</button></div>
+      <div class="err" id="err"></div>
+    </form>`;
+}
+
+function рисоватьЖурнал() {
+  const записи = состояние.журнал;
+  return `<button class="btn quiet close" data-close aria-label="Закрыть">✕</button>
+    <div class="eyebrow">Журнал запусков</div><h2 class="title">Что делал агент</h2>
+    <div class="md">${записи.length ? записи.map((з) => markdown(з.текст.replace(/^# .*\n/, `### ${з.дата}\n`))).join("") : "<p>Запусков ещё не было.</p>"}</div>`;
+}
+
+function рисоватьШторку(сила) {
+  const шторка = document.getElementById("drawer");
+  const пелена = document.getElementById("veil");
+  if (!открыто) { шторка.hidden = true; пелена.hidden = true; шторка.innerHTML = ""; return; }
+  // Пока человек пишет — не перерисовывать из-за автообновления
+  const пишет = [...шторка.querySelectorAll("textarea, input")].some((е) => е.type !== "checkbox" && е.value.trim());
+  if (!сила && пишет) return;
+  let html;
+  if (открыто === "new") html = рисоватьНовую();
+  else if (открыто === "log") html = рисоватьЖурнал();
+  else {
+    const к = состояние.карточки.find((к) => к.файл === открыто);
+    if (!к) { открыто = null; return рисоватьШторку(true); }
+    html = рисоватьКарточку(к);
+  }
+  шторка.innerHTML = html;
+  шторка.hidden = false;
+  пелена.hidden = false;
+}
+
+function открыть(что) {
+  открыто = что;
+  рисоватьДоску();
+  рисоватьШторку(true);
+  document.getElementById("drawer").scrollTop = 0;
+}
+
+async function загрузить(сила = false) {
+  if (СНИМОК) {
+    состояние = СНИМОК;
+    рисоватьАгента();
+    рисоватьДоску();
+    рисоватьШторку(true);
+    return;
+  }
+  const r = await fetch("/api/state");
+  состояние = await r.json();
+  const новый = JSON.stringify([состояние.агент.работает, состояние.карточки.map((к) => [к.файл, к.изменена, к.снимки.length]), состояние.журнал.map((з) => з.текст.length)]);
+  рисоватьАгента();
+  if (сила || новый !== отпечаток) { рисоватьДоску(); рисоватьШторку(сила); }
+  отпечаток = новый;
+}
+
+document.addEventListener("click", async (e) => {
+  if (e.target.id === "veil") return открыть(null);
+  const t = e.target.closest("button");
+  if (!t) return;
+  if (t.dataset.file) return открыть(t.dataset.file);
+  if (t.id === "open-new") return открыть("new");
+  if (t.id === "open-log") return открыть("log");
+  if (t.hasAttribute("data-close")) return открыть(null);
+  if (t.hasAttribute("data-show-redo")) { document.getElementById("redo").hidden = false; document.getElementById("bar-main").hidden = true; document.getElementById("redo-text").focus(); return; }
+  if (t.hasAttribute("data-hide-redo")) { document.getElementById("redo").hidden = true; document.getElementById("bar-main").hidden = false; return; }
+  if (t.dataset.act) {
+    const поле = t.dataset.needText ? document.getElementById(t.dataset.needText) : null;
+    const текст = поле ? поле.value : "";
+    const err = document.getElementById("err");
+    if (поле && !текст.trim()) { err.textContent = "Напишите, что поправить"; поле.focus(); return; }
+    t.disabled = true;
+    const r = await fetch(`/api/cards/${encodeURIComponent(открыто)}/action`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ имя: t.dataset.act, текст }) });
+    if (!r.ok) { err.textContent = (await r.json().catch(() => ({}))).error || "Не сохранилось"; t.disabled = false; return; }
+    if (поле) поле.value = "";
+    await загрузить(true);
+  }
+});
+
+document.addEventListener("keydown", (e) => { if (e.key === "Escape" && открыто) открыть(null); });
+
+document.addEventListener("submit", async (e) => {
+  if (e.target.id !== "new-form") return;
+  e.preventDefault();
+  const ф = new FormData(e.target);
+  const данные = Object.fromEntries(ф.entries());
+  данные.черновик = ф.get("черновик") === "on";
+  const r = await fetch("/api/cards", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(данные) });
+  const ответ = await r.json().catch(() => ({}));
+  if (!r.ok) { document.getElementById("err").textContent = ответ.error || "Не сохранилось"; return; }
+  e.target.reset();
+  открыто = ответ.файл;
+  await загрузить(true);
+});
+
+if (СНИМОК) document.getElementById("open-new").hidden = true;
+загрузить(true);
+if (!СНИМОК) setInterval(() => загрузить(false).catch(() => {}), 8000);
+</script>
 </body>
 </html>
